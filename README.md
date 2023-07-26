@@ -27,6 +27,7 @@ Das Forschungsprojekt **Formen nationaler Identität - problemorientierte Datene
 - kleine Stichprobengröße verhindert komplexere Rechenoperationen
 - personenzentrierte Verfahren wohl erfolgsversprechender als variablenzentrierte Verfahren
 - Manipulation der Identität durch Frame konnte nur unmittelbar überprüft werden
+- kleinere Fehler bei der Anwendung multivariater Verfahren
 
 *** 
 
