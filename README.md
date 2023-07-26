@@ -1,4 +1,4 @@
-# Nationale Identität
+# Forschungsprojekt: Formen nationaler Identität
 > Welche Formen nationaler Identität lassen sich mit einem neu konzipierten Messinstrument identifizieren und wie unterscheiden sie sich hinsichtlich ihres Zusammenhangs mit verschiedenen Korrelaten?
 
 Das Forschungsprojekt **Formen nationaler Identität - problemorientierte Datenerhebung und -analyse** hat ein eigenes, neuartiges Instrument zur Messung nationaler Identität entwickelt und getestet. Die Idee bestand darin, die Stärken verschiedener bereits bekannter Operationalisierungen zu kombinieren und gleichzeitig deren Schwächen und Probleme zu vermeiden. Eigene Daten wurden mittels eines Online-Fragebogens erhoben und mit verschiedenen multivariaten Verfahren ausgewertet. Auf diese Weise konnte das neue Messinstrument umfassend validiert werden.
@@ -27,6 +27,10 @@ Das Forschungsprojekt **Formen nationaler Identität - problemorientierte Datene
 - kleine Stichprobengröße verhindert komplexere Rechenoperationen
 - personenzentrierte Verfahren wohl erfolgsversprechender als variablenzentrierte Verfahren
 - Manipulation der Identität durch Frame konnte nur unmittelbar überprüft werden
+
+*** 
+
+*von Joris Geldon und Kilian Thullen*
 
 
 
