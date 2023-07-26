@@ -1,0 +1,1204 @@
+---
+title: "Forschungsprojekt: Formen nationaler Identität"
+author: Joris Geldon, Kilian Thullen
+output:
+  html_notebook:
+    toc: true
+    toc_float: true
+    highlight: tango
+    code_folding: hide
+    number_sections: true
+    embed-resources: true
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r}
+#| include: false
+
+library(tidyverse)
+library(strengejacke)
+```
+
+# Datenimport
+
+```{r}
+df <- read_spss("natid.sav", convert.factors = F, drop.labels = T)
+df <- tibble(df)
+```
+
+# Datenbereinung
+
+**Umbenennen aller Variablen in die im Fragebogen angegebenen Namen und anschließendes Hinzufügen von fehlenden Variablenbeschriftung**
+```{r}
+df <- df %>% 
+  rename(
+    polint = AT01,
+    reli = SD06_01,
+    feel_01 = AT02_01,
+    feel_02 = AT02_02,
+    feel_03 = AT02_03,
+    feel_04 = AT02_04,
+    feel_05 = AT02_05,
+    feel_06 = AT02_06,
+    feel_07 = AT02_07,
+    feel_08 = AT02_08,
+    feel_09 = AT02_09,
+    feel_10 = AT02_10,
+    feel_11 = AT02_11,
+    feel_12 = AT02_12,
+    feel_13 = AT02_13,
+    patr_01 = AT04_01,
+    patr_02 = AT04_02,
+    patr_03 = AT04_03,
+    patr_04 = AT04_04,
+    patr_05 = AT04_05,
+    patr_06 = AT04_06,
+    dem = AT05,
+    bwahl = AT06,
+    bwahl_07 = AT06_07,
+    depr = AT08,
+    ausoz_01 = AT09_01,
+    ausoz_02 = AT09_02,
+    ausoz_03 = AT09_03,
+    ausoz_04 = AT09_04,
+    ausoz_05 = AT09_05,
+    ausoz_06 = AT09_06,
+    ausoz_07 = AT09_07,
+    ausoz_08 = AT09_08,
+    ausoz_09 = AT09_09,
+    ausoz_10 = AT09_10,
+    xeno_01 = AT11_01,
+    xeno_02 = AT11_02,
+    xeno_03 = AT11_03,
+    xeno_04 = AT11_04,
+    xeno_05 = AT11_05,
+    xeno_06 = AT11_06,
+    xeno_07 = AT11_07,
+    lr = AT13_01,
+    sex = SD02,
+    bun = SD14,
+    bun_01 = SD14_01,
+    bun_02 = SD14_02,
+    bun_03 = SD14_03,
+    bun_04 = SD14_04,
+    bun_05 = SD14_05,
+    bun_06 = SD14_06,
+    bun_07 = SD14_07,
+    bun_08 = SD14_08,
+    bun_09 = SD14_09,
+    bun_10 = SD14_10,
+    bun_11 = SD14_11,
+    bun_12 = SD14_12,
+    bun_13 = SD14_13,
+    bun_14 = SD14_14,
+    bun_15 = SD14_15,
+    bun_16 = SD14_16,
+    wohngr = SD04,
+    educ = SD05,
+    educ_09 = SD05_09,
+    reli = SD06_01,
+    mhin = SD07,
+    zuge = SD08,
+    zuge_01 = SD08_01,
+    zuge_02 = SD08_02,
+    zuge_03 = SD08_03,
+    zuge_04 = SD08_04,
+    zuge_05 = SD08_05,
+    zuge_06 = SD08_06,
+    zuge_07 = SD08_07,
+    zuge_08 = SD08_08,
+    zuge_09 = SD08_09,
+    zuge_09a = SD08_09a,
+    inc = SD09,
+    age = SD13,
+    frame = SD16,
+    dropout = FINISHED) %>% 
+  var_labels(reli = "Religiosität",
+             lr = "LR-Selbsteinstufung",)
+```
+
+## Alter
+
+**Entfernen der ursprünglichen Labels, um dann basierend auf dem erfragten Geburtsjahr das Alter in Jahren zu erhalten**
+```{r}
+df <- df %>% 
+  remove_labels(age, labels = 1:100) %>% 
+  mutate(age = 17 + age) %>% 
+  set_na(age, na = 1:17) %>% 
+  var_labels(age = "Alter in Jahren")
+```
+
+## Bundesland
+
+**Herausfiltern derjenigen Fälle, die angegeben haben, in mehr als einem Bundesland aufgewachsen zu sein. Anschließende Ansicht, um alle Kombinationen von Bundesländern zu erfassen.**
+```{r}
+bulae <- df %>% 
+  select(bun,
+         bun_01,
+         bun_02,
+         bun_03,
+         bun_04,
+         bun_05,
+         bun_06,
+         bun_07,
+         bun_08,
+         bun_09,
+         bun_10,
+         bun_11,
+         bun_12,
+         bun_13,
+         bun_14,
+         bun_15,
+         bun_16) %>% 
+  filter(bun == 2 | bun == 3 | bun == 4)
+```
+
+```{r}
+#| echo: false
+
+bulae
+```
+
+**Hinzufügen der Kombinationen von Bundesländern zur ursprünglichen Variable**
+```{r}
+df <- df %>%
+  mutate(bun = case_when(
+    bun == 1 & bun_01 == 2 ~ 1,
+    bun == 1 & bun_02 == 2 ~ 2,
+    bun == 1 & bun_03 == 2 ~ 3,
+    bun == 1 & bun_04 == 2 ~ 4,
+    bun == 1 & bun_05 == 2 ~ 5,
+    bun == 1 & bun_06 == 2 ~ 6,
+    bun == 1 & bun_07 == 2 ~ 7,
+    bun == 1 & bun_08 == 2 ~ 8,
+    bun == 1 & bun_09 == 2 ~ 9,
+    bun == 1 & bun_10 == 2 ~ 10,
+    bun == 1 & bun_11 == 2 ~ 11,
+    bun == 1 & bun_12 == 2 ~ 12,
+    bun == 1 & bun_13 == 2 ~ 13,
+    bun == 1 & bun_14 == 2 ~ 14,
+    bun == 1 & bun_15 == 2 ~ 15,
+    bun == 1 & bun_16 == 2 ~ 16,
+    bun == 2 & bun_04 == 2 & bun_07 == 2 ~ 17,
+    bun == 2 & bun_04 == 2 & bun_14 == 2 ~ 18,
+    bun == 2 & bun_07 == 2 & bun_11 == 2 ~ 19,
+    bun == 2 & bun_06 == 2 & bun_07 == 2 ~ 20,
+    bun == 2 & bun_07 == 2 & bun_16 == 2 ~ 21,
+    bun == 2 & bun_07 == 2 & bun_10 == 2 ~ 22,
+    bun == 2 & bun_01 == 2 & bun_11 == 2 ~ 23,
+    bun == 2 & bun_10 == 2 & bun_11 == 2 ~ 24,
+    bun == 3 & bun_09 == 2 & bun_10 == 2 & bun_14 == 2 ~ 25,
+    bun == 3 & bun_02 == 2 & bun_07 == 2 & bun_11 == 2 ~ 26,
+    bun == 3 & bun_01 == 2 & bun_02 == 2 & bun_07 == 2 ~ 27,
+    bun == 4 & bun_02 == 2 & bun_03 == 2 & bun_07 == 2 & bun_10 == 2 ~ 28
+  )) %>% 
+  val_labels(bun = c("Baden-Württemberg",
+                       "Bayern",
+                       "Berlin",
+                       "Brandenburg",
+                       "Bremen",
+                       "Hamburg",
+                       "Hessen",
+                       "Mecklenburg-Vorpommern",
+                       "Niedersachsen",
+                       "Nordrhein-Westfalen",
+                       "Rheinland-Pfalz",
+                       "Saarland",
+                       "Sachsen",
+                       "Sachsen-Anhalt",
+                       "Schleswig-Holstein",
+                       "Thüringen",
+                       "Brandenburg, Hessen",
+                       "Brandenburg, Sachsen-Anhalt",
+                       "Hessen, Rheinland-Pfalz",
+                       "Hamburg, Hessen",
+                       "Hessen, Thüringen",
+                       "Hessen, Nordrhein-Westfalen",
+                       "Baden-Württemberg, Rheinland-Pfalz",
+                       "Nordrhein-Westfalen, Rheinland-Pfalz",
+                       "Niedersachsen, Nordrhein-Westfalen, Sachsen-Anhalt",
+                       "Bayern, Hessen, Rheinland-Pfalz",
+                       "Baden-Württemberg, Bayern, Hessen",
+                       "Bayern, Berlin, Hessen, Nordrhein-Westfalen")) %>% 
+  var_labels(bun = "Bundesland aufgewachsen")
+```
+
+## politisches Interesse
+
+**Umdrehen der Skala, damit ein höherer Wert ein höheres Interesse bedeutet**
+```{r}
+df <- df %>% 
+  mutate(polint = rec(polint, rec = "5=1 [überhaupt nicht];
+                                 4=2 [weniger stark];
+                                 3=3 [mittelmäßig];
+                                 2=4 [stark];
+                                 1=5 [sehr stark]"))
+```
+
+## Demokratiezufriedenheit
+
+**Umdrehen der Skala, damit ein höherer Wert eine höhere Zufriedenheit bedeutet**
+```{r}
+df <- df %>% 
+  mutate(dem = rec(dem, rec = "4=1 [sehr unzufrieden];
+                                 3=2 [eher unzufrieden];
+                                 2=3 [eher zufrieden];
+                                 1=4 [sehr zufrieden]"))
+```
+
+## Sonntagsfrage
+
+**Ansicht der offenen Nennungen, um Einordnung in *Andere* und *weiß nicht* vorzunehmen**
+```{r}
+#| echo: false
+
+frq(df$bwahl_07)
+```
+
+**Hinzufügen der offenen Nennungen zur ursprünglichen Variable**
+```{r}
+df <- df %>%
+  to_numeric(bwahl_07) %>% 
+  mutate(bwahl = case_when(
+    bwahl == 1 ~ 1,
+    bwahl == 2 ~ 2,
+    bwahl == 3 ~ 3,
+    bwahl == 4 ~ 4,
+    bwahl == 5 ~ 5,
+    bwahl == 6 ~ 6,
+    bwahl == 8 ~ 8,
+    bwahl == 9 ~ 9,
+    bwahl_07 == 2 | bwahl_07 == 3 | bwahl_07 == 4 | bwahl_07 == 7 | bwahl_07 == 8 |
+      bwahl_07 == 9 | bwahl_07 == 11 | bwahl_07 == 12 ~ 7,
+    bwahl_07 == 5 | bwahl_07 == 6 | bwahl_07 == 10 ~ 99)) %>% 
+  set_na(bwahl, na = 99) %>% 
+  val_labels(bwahl = c("CDU/CSU",
+                      "SPD",
+                      "AfD",
+                      "FDP",
+                      "Die Linke",
+                      "Bündnis 90/Die Grünen",
+                      "Andere",
+                      "Würde nicht wählen",
+                      "Nicht wahlberechtigt,da keine deutsche Staatsbürgerschaft"
+  )) %>% 
+  var_labels(bwahl = "Sonntagsfrage")
+```
+
+## relative Deprivation
+
+**Umdrehen der Skala, damit ein höherer Wert eine höhere Deprivation bedeutet**
+```{r}
+df <- df %>% 
+  mutate(depr = rec(depr, rec = "5=1 [mehr als gerechten Anteil];
+                                 4=2 [etwas mehr als gerechten Anteil];
+                                 3=3 [den gerechten Anteil];
+                                 2=4 [etwas weniger als gerechten Anteil];
+                                 1=5 [weniger als gerechten Anteil]"))
+```
+
+## Autoritarismus / sozialliberale Werte
+
+**Umdrehen von zwei Items in die vorgesehene Wirkrichtung**
+```{r}
+df <- df %>% 
+  mutate(ausoz_07 = rec(ausoz_07, rec =
+  "5=1 [stimme voll und ganz zu];
+  4=2 [stimme eher zu];
+  3=3 [weder noch];
+  2=4 [stimme eher nicht zu];
+  1=5 [stimme überhaupt nicht zu]"))
+
+df <- df %>% 
+  mutate(ausoz_10 = rec(ausoz_10, rec =
+  "5=1 [stimme voll und ganz zu];
+  4=2 [stimme eher zu];
+  3=3 [weder noch];
+  2=4 [stimme eher nicht zu];
+  1=5 [stimme überhaupt nicht zu]"))
+```
+
+## Patriotismus / Nationalismus
+
+**Umdrehen eines Items in die vorgesehene Wirkrichtung**
+```{r}
+df <- df %>% 
+  mutate(patr_02 = rec(patr_02, rec =
+  "5=1 [stimme voll und ganz zu];
+  4=2 [stimme eher zu];
+  3=3 [weder noch];
+  2=4 [stimme eher nicht zu];
+  1=5 [stimme überhaupt nicht zu]"))
+```
+
+
+## Schulabschluss
+
+**Ansicht der offenen Nennungen, um Einordnung in vorhandene Ausprägungen vorzunehmen**
+```{r}
+#| echo: false
+
+frq(df$educ_09)
+```
+
+**Hinzufügen der offenen Nennungen zur ursprünglichen Variable**
+```{r}
+df <- df %>% 
+  to_numeric(educ_09) %>% 
+  mutate(educ = case_when(
+    educ == 1 ~ 1,
+    educ == 3 ~ 3,
+    educ == 5 ~ 5,
+    educ == 6 ~ 6,
+    educ == 7 ~ 7,
+    educ == 8 | educ_09 > 1 ~ 8)) %>% 
+  val_labels(educ = c("Noch Schüler",
+                      "Hauptschulabschluss",
+                      "Mittlere Reife",
+                      "Realschulabschluss",
+                      "Fachholschulreife",
+                      "Abitur")) %>% 
+  var_labels(educ = "Schulabschluss")
+```
+
+## Frame
+
+**Fehlende Werte werden in die Ausprägung "0" rekodiert und anschließend neu benannt**
+```{r}
+df$frame <- ifelse(is.na(df$frame), 0, df$frame)
+
+df <- df %>% 
+  val_labels(frame = c("0", "1"),
+             frame = c("nicht erhalten", "erhalten")) %>% 
+  var_labels(frame = "Frame") %>% 
+  to_factor(frame)
+```
+
+```{r}
+#| include: false
+
+# Entfernen aller irrelevanten Variablen aus dem Datensatz
+
+df[ , c('SERIAL',
+        'REF',
+        'QUESTNNR',
+        'MODE',
+        'STARTED',
+        'bwahl_07',
+        'bun_01',
+        'bun_02',
+        'bun_03',
+        'bun_04',
+        'bun_05',
+        'bun_06',
+        'bun_07',
+        'bun_08',
+        'bun_09',
+        'bun_10',
+        'bun_11',
+        'bun_12',
+        'bun_13',
+        'bun_14',
+        'bun_15',
+        'bun_16',
+        'educ_09',
+        'TIME001',
+        'TIME002',
+        'TIME003',
+        'TIME004',
+     #   'TIME005',
+        'TIME006',
+        'TIME007',
+        'TIME008',
+        'TIME009',
+        'TIME010',
+        'TIME011',
+        'TIME012',
+        'TIME013',
+        'TIME_SUM',
+        'LASTDATA',
+        'Q_VIEWER',
+        'LASTPAGE',
+        'MAXPAGE',
+        'MISSING',
+        'MISSREL',
+        'TIME_RSI',
+        'DEG_TIME')] <- list(NULL)
+```
+
+```{r}
+#| include: false
+
+view_df(df,
+        show.id = F, show.frq = T, show.prc = T, show.na = T, use.viewer = F)
+```
+
+# Dimensionsreduktionsverfahren {.tabset .tabset-pills}
+
+```{r}
+#| include: false
+
+library(psych)
+library(lavaan)
+library(semPlot)
+library(semTools)
+```
+
+## True National Feeling Issues
+
+**Durchführung des Kaiser-Meyer-Olkin-Tests, um die Eignung der Variablen für eine Faktorenanalyse festzustellen**
+```{r}
+#| echo: false
+
+df %>% 
+  select(feel_01:feel_13) %>% 
+  KMO()
+```
+
+**Darstellung eines Screeplots, um die Anzahl der zu bestimmenden Faktoren zu erhalten**
+```{r}
+#| echo: false
+
+df %>% 
+  select(feel_01:feel_13) %>% 
+  scree()
+```
+
+**Durchführung der explorativen Faktorenanalyse mit Promax-Rotation, da von einer Korrelation der beiden Faktoren untereinander ausgegangen werden muss**
+```{r}
+#| warning: false
+#| message: false
+
+feel_fa <- fa(df[c("feel_01",
+                   "feel_02",
+                   "feel_03",
+                   "feel_04",
+                   "feel_05",
+                   "feel_06",
+                   "feel_07",
+                   "feel_08",
+                   "feel_09",
+                   "feel_10",
+                   "feel_11",
+                   "feel_12",
+                   "feel_13")],
+  nfactors = 2, rotate = "oblimin", use = "pairwise", scores = "regression")
+```
+
+```{r}
+#| echo: false
+
+fa.diagram(feel_fa)
+```
+
+
+**Überprüfung der gefundenen Faktorenstruktur mit jeweils einer konfirmatorischen Faktorenanalyse pro Faktor**
+
+### Faktor 1 (ethnocultural)
+
+```{r}
+eth <-"ethn =~ feel_01 + feel_02 + feel_03 + feel_05 + feel_06 + feel_07 + feel_10 + feel_12"
+
+eth_cfa <- cfa(model = eth, data = df, estimator = "MLR")
+
+summary(eth_cfa, fit.measures = T, standardized = T, rsquar = T)
+
+semTools::reliability(eth_cfa, what = "alpha")
+
+modificationIndices(eth_cfa, sort. = T, maximum.number = 20)
+```
+
+```{r}
+#| echo: false
+
+semPaths(object = eth_cfa,
+         whatLabels = "std",
+         layout = "tree",
+         edge.color = "black",
+         nodeLabels =  c("born",
+                       "history",
+                       "ancestry",
+                       "values",
+                       "religion",
+                       "language",
+                       "life",
+                       "sports",
+                       "ethno"),
+         asize = 3,
+         sizeMan = 7,
+         residuals = F,
+         bg = "white")
+```
+```{r}
+#| include: false
+
+semPaths(object = eth_cfa,
+         whatLabels = "std",
+         layout = "tree",
+         edge.color = "black",
+         nodeLabels =  c("born",
+                       "history",
+                       "ancestry",
+                       "values",
+                       "religion",
+                       "language",
+                       "life",
+                       "sports",
+                       "ethno"),
+         asize = 3,
+         sizeMan = 7,
+         residuals = F,
+         bg = "white",
+         width=25, height=15, filetype="png", filename="eth_civ")
+```
+
+### Faktor 2 (civic)
+
+```{r}
+civ <- "civic =~ feel_04 + feel_08 + feel_11 + feel_13"
+
+civ_cfa <- cfa(model = civ, data = df, estimator = "MLR")
+
+summary(civ_cfa, fit.measures = T, standardized = T, rsquar = T)
+
+semTools::reliability(civ_cfa, what = "alpha")
+```
+
+```{r}
+#| echo: false
+
+semPaths(object = civ_cfa,
+         whatLabels = "std",
+         layout = "tree2",
+         edge.color = "black",
+         nodeLabels =  c("constitution",
+                         "institutions",
+                         "taxes",
+                         "laws",
+                         "civic"),
+         asize = 3,
+         sizeMan = 7,
+         residuals = F,
+         bg = "white")
+```
+
+```{r}
+#| include: false
+
+semPaths(object = civ_cfa,
+         whatLabels = "std",
+         layout = "tree2",
+         edge.color = "black",
+         nodeLabels =  c("constitution",
+                         "institutions",
+                         "taxes",
+                         "laws",
+                         "civic"),
+         asize = 3,
+         sizeMan = 7,
+         residuals = F,
+         bg = "white",
+         width=25, height=15, filetype="png", filename="cfa_civ")
+```
+
+## Patriotismus / Nationalismus
+
+**Durchführung des Kaiser-Meyer-Olkin-Tests, um die Eignung der Variablen für eine Faktorenanalyse festzustellen**
+```{r}
+#| echo: false
+
+df %>% 
+  select(patr_01:patr_06) %>% 
+  KMO()
+```
+
+**Darstellung eines Screeplots, um die Anzahl der zu bestimmenden Faktoren zu erhalten**
+```{r}
+#| echo: false
+
+df %>% 
+  select(patr_01:patr_06) %>% 
+  scree()
+```
+
+**Durchführung der explorativen Faktorenanalyse mit Promax-Rotation, da von einer Korrelation der Faktoren untereinander ausgegangen werden muss**
+```{r}
+patr_fa <- fa(df[c("patr_01",
+                   "patr_02",
+                   "patr_03",
+                   "patr_04",
+                   "patr_05",
+                   "patr_06")], 
+   nfactors = 1, rotate = "promax", use = "pairwise", scores = "regression")
+```
+
+```{r}
+#| echo: false
+
+fa.diagram(patr_fa)
+```
+
+**Überprüfung der gefundenen Faktorenstruktur mit einer konfirmatorischen Faktorenanalyse**
+```{r}
+patr <- "patr =~ patr_01 + patr_03 + patr_04 + patr_06"
+
+patr_cfa <- cfa(model = patr, data = df, estimator = "MLR")
+
+summary(patr_cfa, fit.measures = T, standardized = T, rsquar = T)
+
+semTools::reliability(patr_cfa, what = "alpha")
+```
+
+```{r}
+#| echo: false
+
+semPaths(object = patr_cfa, whatLabels = "std", layout = "tree", edge.color = "black")
+```
+
+## Autoritarismus / sozialliberale Werte
+
+**Durchführung des Kaiser-Meyer-Olkin-Tests, um die Eignung der Variablen für eine Faktorenanalyse festzustellen**
+```{r}
+#| echo: false
+
+df %>% 
+  select(ausoz_01:ausoz_10) %>% 
+  KMO()
+```
+
+**Darstellung eines Screeplots, um die Anzahl der zu bestimmenden Faktoren zu erhalten**
+```{r}
+#| echo: false
+
+df %>% 
+  select(ausoz_01:ausoz_10) %>% 
+  scree()
+```
+
+Durchführung der explorativen Faktorenanalyse mit Promax-Rotation, da von einer Korrelation der beiden Faktoren untereinander ausgegangen werden muss
+```{r}
+ausoz_fa <- fa(df[c("ausoz_01",
+                   "ausoz_02",
+                   "ausoz_03",
+                   "ausoz_04",
+                   "ausoz_05",
+                   "ausoz_06",
+                   "ausoz_07",
+                   "ausoz_08",
+                   "ausoz_09",
+                   "ausoz_10")],
+  nfactors = 1, rotate = "promax", use = "pairwise", scores = "regression")
+```
+
+```{r}
+#| echo: false
+
+fa.diagram(ausoz_fa)
+```
+
+**Überprüfung der gefundenen Faktorenstruktur mit jeweils einer konfirmatorischen Faktorenanalyse pro Faktor**
+
+### Faktor 1 (Autoritarismus)
+```{r}
+aut <- "aut =~ ausoz_01 + ausoz_02 + ausoz_03 + ausoz_04 + ausoz_05"
+
+aut_cfa <- cfa(model = aut, data = df, estimator = "MLR")
+
+summary(aut_cfa, fit.measures = T, standardized = T, rsquar = T)
+
+semTools::reliability(aut_cfa, what = "alpha")
+```
+
+```{r}
+#| echo: false
+
+semPaths(object = aut_cfa, whatLabels = "std", layout = "tree", edge.color = "black")
+```
+
+### Faktor 2 (sozialliberale Werte)
+```{r}
+soz <- "soz =~ ausoz_06 + ausoz_07 + ausoz_08 + ausoz_09"
+
+soz_cfa <- cfa(model = soz, data = df, estimator = "MLR")
+
+summary(soz_cfa, fit.measures = T, standardized = T, rsquar = T)
+
+semTools::reliability(soz_cfa, what = "alpha")
+```
+
+```{r}
+#| echo: false
+
+semPaths(object = soz_cfa, whatLabels = "std", layout = "tree", edge.color = "black")
+```
+
+## Xenophobie
+
+**Durchführung des Kaiser-Meyer-Olkin-Tests, um die Eignung der Variablen für eine Faktorenanalyse festzustellen**
+```{r}
+#| echo: false
+
+df %>% 
+  select(xeno_01:xeno_07) %>% 
+  KMO()
+```
+
+**Darstellung eines Screeplots, um die Anzahl der zu bestimmenden Faktoren zu erhalten**
+```{r}
+#| echo: false
+
+df %>% 
+  select(xeno_01:xeno_07) %>% 
+  scree()
+```
+
+**Durchführung der explorativen Faktorenanalyse mit Oblimin-Rotation, da von einer Korrelation der Faktoren untereinander ausgegangen werden muss**
+```{r}
+xeno_fa <- fa(df[c("xeno_01",
+                   "xeno_02",
+                   "xeno_03",
+                   "xeno_04",
+                   "xeno_05",
+                   "xeno_06",
+                   "xeno_07")],
+  nfactors = 1, rotate = "promax", use = "pairwise", scores = "regression")
+```
+
+```{r}
+#| echo: false
+
+fa.diagram(xeno_fa)
+```
+
+**Überprüfung der gefundenen Faktorenstruktur mit einer konfirmatorischen Faktorenanalyse**
+```{r}
+xeno <- "xeno =~ xeno_01 + xeno_02 + xeno_03 + xeno_04 + xeno_05 + xeno_06 + xeno_07"
+
+xeno_cfa <- cfa(model = xeno, data = df, estimator = "MLR")
+
+summary(xeno_cfa, fit.measures = T, standardized = T, rsquar = T)
+
+semTools::reliability(xeno_cfa, what = "alpha")
+```
+
+```{r}
+#| echo: false
+
+semPaths(object = xeno_cfa, whatLabels = "std", layout = "tree", edge.color = "black")
+```
+
+# Datenaufbereitung {.tabset .tabset-pills}
+
+**Zusammenfassen der Variablen der identifizierten Faktoren mittels Mittelwertindizes**
+
+## ethnokulturelle Identität
+
+```{r}
+mean_eth <- df %>% 
+  select(feel_01, feel_02, feel_03, feel_05, feel_06, feel_07, feel_10, feel_12) %>% 
+  row_means(n=Inf)
+
+mean_eth <- mean_eth %>%
+  mutate(ethno = rec(rowmeans, rec =
+                      "1:2=1 [nicht ethnokulturell];
+                      2:3=2 [eher nicht ethnokulturell];
+                      3:4=3 [eher ethnokulturell];
+                      4:5=4 [ethnokulturell]"))
+
+mean_eth <- mean_eth %>% 
+  select(ethno) %>% 
+  var_labels(ethno = "ethnokulturelle Identität")
+```
+
+```{r}
+#| echo: false
+
+frq(mean_eth$ethno)
+```
+
+## zivilpolitische Identität
+
+```{r}
+mean_civ <- df %>% 
+  select(feel_04, feel_08, feel_11, feel_13) %>% 
+  row_means(n=Inf)
+
+mean_civ <- mean_civ %>%
+  mutate(civ = rec(rowmeans, rec =
+                      "1:2=1 [nicht zivilpolitisch];
+                      2:3=2 [eher nicht zivilpolitisch];
+                      3:4=3 [eher zivilpolitisch];
+                      4:5=4 [zivilpolitisch]"))
+
+mean_civ <- mean_civ %>% 
+  select(civ) %>% 
+  var_labels(civ = "zivilpolitische Identität")
+```
+
+```{r}
+#| echo: false
+
+frq(mean_civ$civ)
+```
+
+## Autoritarismus
+
+```{r}
+mean_aut <- df %>% 
+  select(ausoz_01, ausoz_02, ausoz_03, ausoz_04, ausoz_05) %>% 
+  row_means(n=Inf)
+
+mean_aut <- mean_aut %>%
+  mutate(aut = rec(rowmeans, rec =
+                      "1:2=1 [nicht autoritär];
+                      2:3=2 [eher nicht autoritär];
+                      3:4=3 [eher autoritär];
+                      4:5=4 [autoritär]"))
+
+mean_aut <- mean_aut %>% 
+  select(aut) %>% 
+  var_labels(aut = "Autoritarismus")
+```
+
+```{r}
+#| echo: false
+
+frq(mean_aut$aut)
+```
+
+## Xenophobie
+
+```{r}
+mean_xeno <- df %>% 
+  select(xeno_01, xeno_02, xeno_03, xeno_04, xeno_05, xeno_06, xeno_07) %>% 
+  row_means(n=Inf)
+
+mean_xeno <- mean_xeno %>%
+  mutate(xeno = rec(rowmeans, rec =
+                      "1:2=1 [nicht xenophob];
+                      2:3=2 [eher nicht xenophob];
+                      3:4=3 [eher xenophob];
+                      4:5=4 [xenophob]"))
+
+mean_xeno <- mean_xeno %>% 
+  select(xeno) %>% 
+  var_labels(xeno = "Xenophobie")
+```
+
+```{r}
+#| echo: false
+
+frq(mean_xeno$xeno)
+```
+
+```{r}
+#| include: false
+
+# Hinzufügen der neu berechneten Variablen zum Datensatz
+
+df <- df %>% 
+  add_columns(mean_aut, mean_civ, mean_eth, mean_xeno)
+```
+
+# Analyse
+
+## t-Tests {.tabset .tabset-pills}
+
+**Durchführung von Zwei-Stichproben t-Tests, um festzustellen, ob es Unterschiede zwischen der "Frame-Gruppe" und der Kontrollgruppe gibt**
+
+```{r}
+#| include: false
+
+library(car)
+```
+
+### ethnokulturelle Identität
+
+```{r}
+#| echo: false
+#| message: false
+
+leveneTest(df$ethno,
+           df$frame,
+           center = "mean") 
+```
+
+```{r}
+#| echo: false
+
+t.test(df$ethno ~ df$frame,
+       mu = 0,
+       alternative = "two.sided",
+       paired = F,
+       var.equal = T)   
+```
+
+### zivilpolitische Identität
+
+```{r}
+#| echo: false
+
+leveneTest(df$civ,
+           df$frame,
+           center = "mean") 
+```
+
+```{r}
+#| echo: false
+
+t.test(df$civ ~ df$frame,
+       mu = 0,
+       alternative = "two.sided",
+       paired = F,
+       var.equal = T)
+```
+
+### erneute Überprüfung
+
+**Entfernen aller Befragten, die weniger als 33 Sekunden mit dem Lesen des Frames verbracht haben**
+```{r}
+df <- df %>% 
+  mutate(frameread = case_when(
+    TIME005 >= 33 & TIME005 < 380 ~ 1))
+
+df$frameread <- ifelse(is.na(df$frameread), 0, df$frameread)
+```
+
+**ethnokulturelle Identität**
+```{r}
+#| echo: false
+#| warning: false
+
+leveneTest(df$ethno,
+           df$frameread,
+           center = "mean") 
+```
+
+```{r}
+#| echo: false
+
+t.test(df$ethno ~ df$frameread,
+       mu = 0,
+       alternative = "two.sided",
+       paired = F,
+       var.equal = T)  
+```
+
+**zivilpolitische Identität**
+```{r}
+#| echo: false
+#| warning: false
+
+leveneTest(df$civ,
+           df$frameread,
+           center = "mean") 
+```
+
+```{r}
+#| echo: false
+
+t.test(df$civ ~ df$frameread,
+       mu = 0,
+       alternative = "two.sided",
+       paired = F,
+       var.equal = T)
+```
+
+## lineare Regression {.tabset .tabset-pills}
+
+**Rekodieren der Bildungsvariable in drei Kategorien**
+```{r}
+df <- df %>%
+  mutate(educ = rec(educ, rec =
+                      "2:3=1 [niedrig];
+                      4:6=2 [mittel];
+                      7:8=3 [hoch];
+                      1=NA")) %>% 
+  var_labels(educ = "Bildung")
+```
+
+**Dummy-Codierung der kategorialen Variablen**
+```{r}
+df <- df %>% 
+  to_label(educ, sex, wohngr)
+
+df <- df %>%
+  ref_lvl(educ, lvl = 2)
+
+df <- df %>% 
+  ref_lvl(sex, lvl = 3)
+```
+
+**Entfernen aller Fälle, die fehlende Werte in mindestens einer der berücksichtigten Variablen haben**
+```{r}
+ds <- df %>% 
+  select(age,
+         aut,
+         xeno,
+         dem,
+         reli,
+         depr,
+         polint,
+         lr,
+         ethno,
+         civ,
+         educ,
+         sex,
+         wohngr) %>% 
+  drop_na()
+```
+
+**Alle metrischen Variablen müssen für die lineare Regressionsanalyse z-standardisiert werden**
+```{r}
+ds <- ds %>% 
+  mutate(ageZ = scale(age),
+         autZ = scale(aut),
+         xenoZ = scale(xeno),
+         demZ = scale(dem),
+         reliZ = scale(reli),
+         deprZ = scale(depr),
+         polintZ = scale(polint),
+         lrZ = scale(lr))
+```
+
+```{r}
+#| include: false
+
+library(performance)
+```
+
+### ethnokulturelle Identität
+
+```{r}
+#| echo: false
+
+eth_reg <- lm(ethno ~ xenoZ + autZ + demZ + sex + age + educ + lrZ + reliZ + wohngr + polintZ + deprZ, ds)
+summary(eth_reg)
+```
+
+**regressionsdiagnostische Überprüfung des Modells**
+```{r}
+#| echo: false
+#| message: false
+
+check_model(eth_reg, panel = T, check = c("pp_check", "linearity"))
+check_model(eth_reg, panel = T, check = c("homogeneity", "vif"))
+```
+
+```{r}
+#| include: false
+
+library("lmtest")
+```
+
+**zusätzliche Durchführung des Breusch-Pagan-Tests, um Homoskedastizität zu überprüfen**
+```{r}
+#| echo: false
+
+bptest(eth_reg)
+```
+
+### zivilpolitische Identität
+
+```{r}
+#| echo: false
+
+civ_reg <- lm(civ ~ xenoZ + autZ + demZ + sex + age + educ + lrZ + reliZ + wohngr + polintZ + deprZ, ds)
+summary(civ_reg)
+```
+
+**regressionsdiagnostische Überprüfung des Modells**
+```{r}
+#| echo: false
+#| message: false
+
+check_model(civ_reg, panel = T, check = c("pp_check"))
+check_model(civ_reg, panel = T, check = c("homogeneity", "vif"))
+```
+
+**zusätzliche Durchführung des Breusch-Pagan-Tests, um Homoskedastizität zu überprüfen**
+```{r}
+#| echo: false
+
+bptest(civ_reg)
+```
+
+# Information
+
+```{r}
+#| echo: false
+
+devtools::session_info()
+```
+
+```{r}
+library(foreign)
+write.foreign(df, "clean.txt", "clean.sps", package="SPSS")
+```
+
+```{r}
+write_sav(df, "clean.sav")
+```
+
+
+```{=html}
+
+<style type="text/css">
+
+/* Table of Contents */
+  TOC {
+    color: black;
+  }
+
+/* Body */
+  body {
+    font-size: 14px;
+  }
+
+/* Table */
+  td {
+    font-size: 13px;
+  }
+
+/* Headings */
+  h1.title {
+    font-size: 30px;
+    font-weight: bold;
+    text-align: center;
+  }
+h1 {
+  font-size: 24px;
+  font-weight: bold;
+}
+h2 {
+  font-size: 18px;
+  font-weight: bold;
+}
+h3 {
+  font-size: 16px;
+}
+h4 {
+  font-size: 14px;
+}
+
+/* Code Blocks */
+  code.r, pre {
+    font-size: 13px;
+  margin-top: 0;
+  margin-bottom: 1.5;
+}
+
+p {
+  margin-top: 20px;
+}
+
+  }
+
+/* Links */
+  a {
+    color: #3366CC;
+  }
+  
+</style>
+```
