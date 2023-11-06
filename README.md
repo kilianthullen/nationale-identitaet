@@ -22,10 +22,9 @@ Das Forschungsprojekt **Formen nationaler Identität - problemorientierte Datene
 
 ## Einschränkungen
 
-- nicht repräsentatives und teilweise stark verzerrtes Sample erschwert die Interpretation der Ergebnisse
+- nicht repräsentatives und teilweise stark verzerrtes Sample erschwert die Generalisierbarkeit der Ergebnisse
 - kleine Stichprobengröße verhindert komplexere Rechenoperationen
-- personenzentrierte Verfahren wohl erfolgsversprechender als variablenzentrierte Verfahren
-- Manipulation der Identität durch Frame konnte nur unmittelbar überprüft werden
+- Manipulation der Identitätserhebung durch eingebundenen Frame konnte nur unmittelbar überprüft werden
 
 *** 
 
